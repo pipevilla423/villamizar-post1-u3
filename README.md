@@ -67,3 +67,44 @@ Durante las tres primeras iteraciones, el salto se realiza porque CX conserva un
 
 **Resultado final:** AX = `0008h` (8 decimal) y CX = `0000h`. Se ejecutaron 10 instrucciones antes de alcanzar la instrucción de terminación, demostrando el funcionamiento correcto del bucle LOOP.
 
+
+### Paso 12. Decisión técnica — Comando de verificación para bucles de muchas iteraciones (T vs. G)
+
+Para verificar el resultado final de un bucle de 100 iteraciones, **se recomienda utilizar el comando `G` (Go)** en lugar de ejecutar repetidamente el comando `T` (Trace), debido a que permite avanzar directamente hasta un punto de interrupción sin detenerse después de cada instrucción.
+
+El comando `G 20C` ejecuta el programa hasta la dirección `020C`, donde se encuentra `INT 20`, y devuelve el control a DEBUG antes de ejecutar dicha instrucción. Esto permite comprobar el resultado final del bucle sin recorrer manualmente todas sus iteraciones. En cambio, utilizar `T` requeriría ejecutar cientos de instrucciones individualmente, aumentando considerablemente el tiempo de depuración.
+
+Sin embargo, **la principal desventaja de `G` es que no permite observar los estados intermedios** de los registros, las banderas y el puntero de instrucciones. Por esta razón, durante los Pasos 4, 7 y 11 del laboratorio fue necesario utilizar `T`, ya que las tablas de traza exigían registrar los valores de AX, CX, IP y las condiciones de salto después de cada instrucción ejecutada.
+
+Después de ejecutar `G 20C`, **se selecciona el comando `R AX`** para consultar exclusivamente el valor final del registro AX, sin modificarlo ni ejecutar instrucciones adicionales.
+
+En conclusión, `G` es la opción más eficiente para verificar el resultado final de bucles extensos, mientras que `T` es indispensable cuando se necesita analizar detalladamente el comportamiento del programa instrucción por instrucción.
+
+### Checkpoint 3 — Tabla de traza del bucle DEC/JNZ
+
+| Iteración | Instrucción | AX después | CX después | IP siguiente | ¿JNZ salta? |
+|---|---|---|---|---|---|
+| Inicialización | MOV AX,0000 | 0000 | Valor previo | 0203 | No aplica |
+| Inicialización | MOV CX,0004 | 0000 | 0004 | 0206 | No aplica |
+| 1 | ADD AX,0002 | 0002 | 0004 | 0209 | No aplica |
+| 1 | DEC CX | 0002 | 0003 | 020A | No aplica |
+| 1 | JNZ 0206 | 0002 | 0003 | 0206 | Sí |
+| 2 | ADD AX,0002 | 0004 | 0003 | 0209 | No aplica |
+| 2 | DEC CX | 0004 | 0002 | 020A | No aplica |
+| 2 | JNZ 0206 | 0004 | 0002 | 0206 | Sí |
+| 3 | ADD AX,0002 | 0006 | 0002 | 0209 | No aplica |
+| 3 | DEC CX | 0006 | 0001 | 020A | No aplica |
+| 3 | JNZ 0206 | 0006 | 0001 | 0206 | Sí |
+| 4 | ADD AX,0002 | 0008 | 0001 | 0209 | No aplica |
+| 4 | DEC CX | 0008 | 0000 | 020A | No aplica |
+| 4 | JNZ 0206 | 0008 | 0000 | 020C | No |
+
+**Comparación de instrucciones ejecutadas:**
+
+- **Bucle LOOP:** 11 instrucciones (2 de inicialización + 8 del bucle + 1 de terminación).
+- **Bucle DEC/JNZ:** 15 instrucciones (2 de inicialización + 12 del bucle + 1 de terminación).
+- **Diferencia:** DEC/JNZ requiere 4 instrucciones adicionales.
+
+Ambos programas generan el mismo resultado final: `AX = 0008h` (8 decimal) y `CX = 0000h`.
+
+La instrucción `LOOP` ocupa 2 bytes (`E2 FB`), mientras que la combinación `DEC CX` y `JNZ 0206` ocupa 3 bytes (`49 75 FA`). Por lo tanto, LOOP ofrece una codificación más compacta para este caso específico.
