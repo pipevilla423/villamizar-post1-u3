@@ -32,3 +32,38 @@ Finalmente, ambas codificaciones pueden verificarse sin ejecutar ninguna instruc
 
 En conclusión, aunque ambas instrucciones ocupan tres bytes, el direccionamiento inmediato evita una lectura adicional del operando, mientras que el direccionamiento directo a memoria permite trabajar con valores variables almacenados en memoria.
 
+
+### Checkpoint 1 — Tabla de traza del programa de suma
+
+| Instrucción ejecutada | AX | BX | CX | IP siguiente | ZF | CF | SF |
+|---|---|---|---|---|---|---|---|
+| MOV AX,000A | 000A | 0000 | 0000 | 0103 | 0 | 0 | 0 |
+| MOV BX,0005 | 000A | 0005 | 0000 | 0106 | 0 | 0 | 0 |
+| MOV CX,0003 | 000A | 0005 | 0003 | 0109 | 0 | 0 | 0 |
+| ADD AX,BX | 000F | 0005 | 0003 | 010B | 0 | 0 | 0 |
+| ADD AX,CX | 0012 | 0005 | 0003 | 010D | 0 | 0 | 0 |
+
+**Verificación:** El registro AX contiene `0012h`, equivalente a 18 en decimal, después de ejecutar las dos instrucciones ADD.
+
+
+### Checkpoint 2 — Tabla de traza del programa con bucle LOOP
+
+| Iteración | Instrucción | AX después | CX después | IP siguiente | ¿LOOP salta? |
+|---|---|---|---|---|---|
+| Inicialización | MOV AX,0000 | 0000 | Valor previo | 0103 | No aplica |
+| Inicialización | MOV CX,0004 | 0000 | 0004 | 0106 | No aplica |
+| 1 | ADD AX,0002 | 0002 | 0004 | 0109 | No aplica |
+| 1 | LOOP 0106 | 0002 | 0003 | 0106 | Sí |
+| 2 | ADD AX,0002 | 0004 | 0003 | 0109 | No aplica |
+| 2 | LOOP 0106 | 0004 | 0002 | 0106 | Sí |
+| 3 | ADD AX,0002 | 0006 | 0002 | 0109 | No aplica |
+| 3 | LOOP 0106 | 0006 | 0001 | 0106 | Sí |
+| 4 | ADD AX,0002 | 0008 | 0001 | 0109 | No aplica |
+| 4 | LOOP 0106 | 0008 | 0000 | 010B | No |
+
+**Análisis:** El programa utiliza el registro CX como contador para controlar cuatro iteraciones del bucle. En cada iteración, la instrucción `ADD AX,0002` incrementa el acumulador AX en dos unidades, mientras que `LOOP 0106` decrementa CX en una unidad y regresa a la dirección `0106` siempre que CX sea diferente de cero.
+
+Durante las tres primeras iteraciones, el salto se realiza porque CX conserva un valor distinto de cero. En la cuarta iteración, CX llega a `0000`, por lo que la instrucción LOOP deja de saltar y continúa hacia `INT 20`.
+
+**Resultado final:** AX = `0008h` (8 decimal) y CX = `0000h`. Se ejecutaron 10 instrucciones antes de alcanzar la instrucción de terminación, demostrando el funcionamiento correcto del bucle LOOP.
+
